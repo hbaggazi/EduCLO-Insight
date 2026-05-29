@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZipGrade CLO Exam Analyzer</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --surface:#ffffff; --surface-alt:#f7f9fc;
+    --border:#e1e6ec; --border-soft:#eef1f5;
+    --text:#2c3e50; --text-muted:#5a6b80; --text-faint:#8a99ad; --heading:#1f3a5f;
+    --accent:#1f6feb; --accent-dark:#1858c4; --accent-soft:#eef4ff; --accent-line:#cdddfb;
+    --good:#1d6f3a; --good-soft:#eaf7ee; --good-line:#c6e6cf; --good-bar:#34a853;
+    --warn:#8a5a00; --warn-soft:#fff5e1; --warn-line:#f0d9a3; --warn-bar:#e0a23a;
+    --bad:#a02121;  --bad-soft:#fdecec;  --bad-line:#f3c2c2;  --bad-bar:#d04545;
+    --crit:#6b1414; --crit-soft:#f9dada; --crit-line:#e9a8a8;
+    --radius:8px; --radius-sm:6px; --shadow-card:0 1px 3px rgba(15,30,50,.06);
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-ar:"Segoe UI",Tahoma,"Geeza Pro",Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.55;font-size:16px}
+  html[dir="rtl"] body{font-family:var(--font-ar)}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--surface-alt);border:1px solid var(--border-soft);padding:1px 5px;border-radius:4px;direction:ltr;unicode-bidi:isolate}
+  a{color:var(--accent)}
+  a:focus,button:focus,label:focus,input:focus,select:focus{outline:2px solid var(--accent);outline-offset:2px}
+
+  .container{max-width:1100px;margin:0 auto;padding:32px 24px 64px}
+  .lang-bar{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:8px;font-size:.9rem;color:var(--text-muted)}
+  html[dir="rtl"] .lang-bar{justify-content:flex-start}
+  .lang-bar select{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:.9rem;cursor:pointer}
+
+  header.page-header{text-align:center;padding:12px 0;border-bottom:1px solid var(--border);margin-bottom:28px}
+  header.page-header h1{margin:0 0 8px;font-size:1.9rem;color:var(--heading);font-weight:600}
+  header.page-header p{margin:0 auto;max-width:720px;color:var(--text-muted);font-size:.98rem}
+  footer.page-footer{text-align:center;color:var(--text-faint);font-size:.82rem;margin-top:32px;padding-top:16px;border-top:1px solid var(--border)}
+  footer.page-footer .disclaimer{display:block;margin-top:6px;font-style:italic;color:var(--text-muted)}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;margin-bottom:20px;box-shadow:var(--shadow-card)}
+  .card h2{margin:0 0 14px;font-size:1.18rem;color:var(--heading);font-weight:600;padding-bottom:8px;border-bottom:1px solid var(--border-soft)}
+  .card .placeholder{color:var(--text-faint);font-style:italic;font-size:.95rem;padding:12px 0;text-align:center}
+  .card .placeholder .empty-icon{display:block;font-size:1.6rem;margin-bottom:6px;font-style:normal;color:#b8c2d1}
+
+  .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .controls label.file-label{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;padding:9px 16px;border-radius:var(--radius-sm);cursor:pointer;font-size:.95rem;user-select:none}
+  .controls label.file-label:hover{background:var(--accent-dark)}
+  .controls input[type="file"]{display:none}
+  .controls button{background:var(--surface);color:var(--accent);border:1px solid var(--accent);padding:9px 16px;border-radius:var(--radius-sm);cursor:pointer;font-size:.95rem}
+  .controls button:hover{background:var(--accent-soft)}
+  .controls .file-name{color:var(--text-muted);font-size:.9rem;word-break:break-all}
+  .controls button.print-btn{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .controls button.print-btn:hover{background:var(--accent-dark)}
+
+  .target-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px;padding-top:14px;border-top:1px dashed var(--border-soft)}
+  .target-row label{font-size:.92rem;color:var(--text-muted);font-weight:600}
+  .target-row input[type="number"]{width:90px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.95rem;color:var(--text);background:var(--surface)}
+  .target-row .target-hint{font-size:.85rem;color:var(--text-faint)}
+
+  .status{margin-top:14px;padding:10px 14px;border-radius:var(--radius-sm);font-size:.92rem;display:none;border:1px solid transparent}
+  .status.show{display:flex;align-items:flex-start;gap:8px}
+  .status .status-icon{flex:0 0 auto;font-weight:700;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:.8rem;line-height:1}
+  .status.info{background:var(--accent-soft);color:var(--accent-dark);border-color:var(--accent-line)} .status.info .status-icon{background:var(--accent);color:#fff}
+  .status.success{background:var(--good-soft);color:var(--good);border-color:var(--good-line)} .status.success .status-icon{background:var(--good);color:#fff}
+  .status.warning{background:var(--warn-soft);color:var(--warn);border-color:var(--warn-line)} .status.warning .status-icon{background:var(--warn-bar);color:#fff}
+  .status.error{background:var(--bad-soft);color:var(--bad);border-color:var(--bad-line)} .status.error .status-icon{background:var(--bad-bar);color:#fff}
+
+  .inline-warning,.inline-success,.inline-note{padding:10px 14px;border-radius:var(--radius-sm);font-size:.92rem;margin:10px 0 0;border:1px solid transparent;display:flex;gap:8px}
+  .inline-warning{background:var(--warn-soft);color:var(--warn);border-color:var(--warn-line)}
+  .inline-success{background:var(--good-soft);color:var(--good);border-color:var(--good-line)}
+  .inline-note{background:var(--accent-soft);color:var(--accent-dark);border-color:var(--accent-line)}
+
+  .table-wrap{overflow-x:auto;border:1px solid var(--border-soft);border-radius:var(--radius-sm);margin-top:4px}
+  table{width:100%;border-collapse:collapse;font-size:.92rem;background:var(--surface)}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
+  html[dir="rtl"] th,html[dir="rtl"] td{text-align:right}
+  th{background:var(--surface-alt);color:var(--heading);font-weight:600;font-size:.86rem;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+  html[dir="rtl"] th{text-transform:none;letter-spacing:0}
+  tbody tr:hover{background:#fafbfd}
+  tbody tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  html[dir="rtl"] td.num,html[dir="rtl"] th.num{text-align:left}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+  .stat{background:var(--surface-alt);border:1px solid var(--border-soft);border-radius:var(--radius);padding:14px 16px;text-align:center}
+  .stat .stat-label{display:block;font-size:.74rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+  html[dir="rtl"] .stat .stat-label{text-transform:none;letter-spacing:0}
+  .stat .stat-value{display:block;font-size:1.55rem;font-weight:700;color:var(--heading)}
+  .stat .stat-sub{display:block;font-size:.78rem;color:var(--text-faint);margin-top:4px}
+  .stat.accent .stat-value{color:var(--accent)} .stat.good .stat-value{color:var(--good)}
+  .stat.warn .stat-value{color:var(--warn)} .stat.bad .stat-value{color:var(--bad)}
+
+  .meta-line{color:var(--text-muted);font-size:.9rem;margin:0 0 12px}
+  .meta-line small{color:var(--text-faint)}
+
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.76rem;font-weight:600;border:1px solid transparent;white-space:nowrap}
+  .badge.good{background:var(--good-soft);color:var(--good);border-color:var(--good-line)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn-line)}
+  .badge.bad{background:var(--bad-soft);color:var(--bad);border-color:var(--bad-line)}
+  .badge.crit{background:var(--crit-soft);color:var(--crit);border-color:var(--crit-line)}
+
+  .bar{background:var(--border-soft);height:8px;border-radius:4px;overflow:hidden;min-width:80px}
+  .bar>span{display:block;height:100%;border-radius:4px}
+  .bar.good>span{background:var(--good-bar)} .bar.warn>span{background:var(--warn-bar)}
+  .bar.bad>span{background:var(--bad-bar)} .bar.crit>span{background:var(--crit)}
+  .bar.accent>span{background:var(--accent)}
+
+  .gpa-mini{display:flex;gap:6px;flex-wrap:wrap;font-size:.78rem}
+  .gpa-mini .chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;border:1px solid var(--border-soft);background:var(--surface-alt);color:var(--text-muted)}
+  .gpa-mini .chip.good{background:var(--good-soft);color:var(--good);border-color:var(--good-line)}
+  .gpa-mini .chip.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn-line)}
+  .gpa-mini .chip.bad{background:var(--bad-soft);color:var(--bad);border-color:var(--bad-line)}
+  .gpa-mini .chip.muted{opacity:.55}
+  .gpa-mini .chip-key{font-weight:700;font-size:.7rem}
+
+  .exec-decision{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 18px;border-radius:var(--radius);border:1px solid var(--border-soft);background:var(--surface-alt);margin-bottom:14px}
+  .exec-decision .decision-label{display:inline-block;padding:6px 14px;border-radius:999px;font-weight:700;font-size:.9rem;border:1px solid transparent}
+  .exec-decision.proceed{background:var(--good-soft);border-color:var(--good-line)} .exec-decision.proceed .decision-label{background:var(--good);color:#fff}
+  .exec-decision.support{background:var(--accent-soft);border-color:var(--accent-line)} .exec-decision.support .decision-label{background:var(--accent);color:#fff}
+  .exec-decision.review-q{background:var(--warn-soft);border-color:var(--warn-line)} .exec-decision.review-q .decision-label{background:#b07000;color:#fff}
+  .exec-decision.review-teaching{background:var(--bad-soft);border-color:var(--bad-line)} .exec-decision.review-teaching .decision-label{background:var(--bad);color:#fff}
+  .exec-decision .decision-text{color:var(--text);font-size:.98rem;flex:1 1 280px}
+
+  .exec-section-title{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin:18px 0 6px;font-weight:600}
+  html[dir="rtl"] .exec-section-title{text-transform:none;letter-spacing:0}
+  .findings,.actions{margin:0;padding-left:22px}
+  html[dir="rtl"] .findings,html[dir="rtl"] .actions{padding-left:0;padding-right:22px}
+  .findings li,.actions li{margin-bottom:6px}
+
+  .gpa-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:6px}
+  .gpa-summary-card{border:1px solid var(--border-soft);border-radius:var(--radius-sm);padding:10px 12px;background:var(--surface-alt)}
+  .gpa-summary-card .gsc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .gpa-summary-card .gsc-name{font-weight:600;color:var(--heading);font-size:.9rem}
+  .gpa-summary-card .gsc-row{display:flex;justify-content:space-between;font-size:.82rem;color:var(--text-muted);margin:2px 0}
+  .gpa-summary-card .gsc-row strong{color:var(--text);font-variant-numeric:tabular-nums}
+  .gpa-summary-card .gsc-gap.pos{color:var(--good)}
+  .gpa-summary-card .gsc-gap.neg{color:var(--bad)}
+
+  /* Print-only report header (hidden on screen) */
+  .print-only{display:none}
+  .print-header{border-bottom:2px solid var(--heading);padding-bottom:10px;margin-bottom:18px}
+  .print-header h1{margin:0 0 6px;font-size:1.4rem;color:var(--heading)}
+  .print-header .ph-sub{font-size:.85rem;color:var(--text-muted);margin:2px 0}
+  .print-header .ph-meta{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--text);margin-top:8px}
+  .print-header .ph-meta strong{color:var(--heading)}
+
+  @media (max-width:720px){
+    .container{padding:20px 14px 48px}
+    header.page-header h1{font-size:1.5rem}
+    .card{padding:16px}
+    .stat .stat-value{font-size:1.3rem}
+  }
+
+  /* ===================== PRINT ===================== */
+  @page{ size: A4; margin: 14mm 12mm; }
+  @media print{
+    html,body{background:#fff !important;color:#000;font-size:11pt}
+    .container{max-width:none;margin:0;padding:0}
+
+    /* Hide non-report controls */
+    .no-print, .lang-bar, #upload-card, .page-header, .page-footer .disclaimer { display:none !important; }
+    .status, .controls, .target-row { display:none !important; }
+
+    /* Show print-only header */
+    .print-only{display:block !important}
+
+    /* Cards become clean blocks */
+    .card{
+      box-shadow:none !important;
+      border:1px solid #c8cdd4 !important;
+      border-radius:4px !important;
+      padding:10px 12px !important;
+      margin-bottom:10px !important;
+      page-break-inside:avoid;
+      break-inside:avoid;
+    }
+    .card h2{font-size:1rem !important;margin:0 0 8px;border-bottom:1px solid #d5d9df;padding-bottom:4px;color:#000}
+    .placeholder{display:none !important}
+
+    /* Tables: no scrollbars, fit page, wrap cells */
+    .table-wrap{
+      overflow:visible !important;
+      border:none !important;
+      border-radius:0 !important;
+      margin:0 !important;
+    }
+    table{
+      width:100% !important;
+      table-layout:fixed !important;
+      font-size:8.5pt !important;
+      border-collapse:collapse !important;
+      page-break-inside:auto;
+    }
+    th,td{
+      padding:4px 5px !important;
+      word-wrap:break-word;
+      overflow-wrap:anywhere;
+      white-space:normal !important;
+      border:1px solid #c8cdd4 !important;
+      vertical-align:top;
+      background:#fff !important;
+    }
+    th{
+      background:#eef1f5 !important;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+      font-size:7.8pt !important;
+      letter-spacing:0 !important;
+      text-transform:none !important;
+    }
+    td.num,th.num{white-space:nowrap !important}
+    tr{page-break-inside:avoid;break-inside:avoid}
+    thead{display:table-header-group}
+    tfoot{display:table-footer-group}
+
+    /* Bars / chips preserve color */
+    .badge,.bar,.bar>span,.gpa-mini .chip{
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+    .bar{min-width:40px;height:6px}
+
+    /* Executive summary */
+    .exec-decision{
+      page-break-inside:avoid;
+      padding:8px 10px !important;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+    }
+    .findings li,.actions li{margin-bottom:3px;font-size:9.5pt}
+
+    /* GPA summary grid */
+    .gpa-summary-grid{
+      grid-template-columns:repeat(3,1fr) !important;
+      gap:6px !important;
+    }
+    .gpa-summary-card{
+      page-break-inside:avoid;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
+      padding:6px 8px !important;
+    }
+
+    /* Stat grid compact */
+    .stat-grid{grid-template-columns:repeat(5,1fr) !important;gap:6px !important}
+    .stat{padding:6px 8px !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .stat .stat-value{font-size:1.05rem !important}
+    .stat .stat-label{font-size:.62rem !important}
+    .stat .stat-sub{font-size:.62rem !important}
+
+    /* Print-only split tables visible; on-screen single table hidden */
+    .screen-only{display:none !important}
+    .print-weak-main, .print-weak-gpa{display:table !important}
+
+    /* Avoid orphan headings */
+    .exec-section-title{page-break-after:avoid;break-after:avoid}
+
+    a{color:#000;text-decoration:none}
+  }
+  /* Default: print split tables hidden on screen */
+  .print-weak-main, .print-weak-gpa{display:none}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="lang-bar no-print">
+    <label for="lang-select" data-i18n="langLabel">Language:</label>
+    <select id="lang-select"><option value="en">English</option><option value="ar">العربية</option></select>
+  </div>
+
+  <header class="page-header no-print">
+    <h1 data-i18n="appTitle">ZipGrade CLO Exam Analyzer</h1>
+    <p data-i18n="appDescription">A simple offline tool that analyzes a single ZipGrade CSV export for one exam.</p>
+  </header>
+
+  <!-- Print-only report header -->
+  <div class="print-only print-header" id="print-header">
+    <h1 id="ph-title">ZipGrade CLO Exam Analyzer — Exam Report</h1>
+    <div class="ph-sub" id="ph-tool">ZipGrade CLO Exam Analyzer</div>
+    <div class="ph-meta" id="ph-meta"></div>
+  </div>
+
+  <section class="card no-print" id="upload-card">
+    <h2 data-i18n="uploadHeading">1. Load Exam Data</h2>
+    <div class="controls">
+      <label class="file-label" for="csv-input" data-i18n="chooseFile">Choose CSV file</label>
+      <input type="file" id="csv-input" accept=".csv,text/csv">
+      <button type="button" id="sample-btn" data-i18n="loadSample">Load Sample Data</button>
+      <button type="button" id="print-btn" class="print-btn" data-i18n="printReport">Print / Save as PDF</button>
+      <span class="file-name" id="file-name" data-i18n="noFileSelected">No file selected</span>
+    </div>
+    <div class="target-row">
+      <label for="target-input" data-i18n="achievementTargetLabel">Achievement Target (%):</label>
+      <input type="number" id="target-input" min="0" max="100" step="1" value="85">
+      <button type="button" id="recalc-btn" data-i18n="recalcButton">Recalculate</button>
+      <span class="target-hint" data-i18n="targetHint">All weakness, CLO, and group analyses use this target.</span>
+    </div>
+    <div class="status" id="status-banner" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="card">
+    <h2 data-i18n="examSummaryHeading">2. Exam Summary</h2>
+    <div class="placeholder" id="exam-summary-content">
+      <span class="empty-icon">▭</span>
+      <span data-i18n="examSummaryEmpty">Load a CSV file to view the exam summary.</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 data-i18n="cloHeading">3. CLO Performance</h2>
+    <div class="placeholder" id="clo-performance-content">
+      <span class="empty-icon">▭</span>
+      <span data-i18n="cloEmpty">Load a CSV file to view per-CLO mastery.</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 data-i18n="weakHeading">4. Weak Questions</h2>
+    <div class="placeholder" id="weak-questions-content">
+      <span class="empty-icon">▭</span>
+      <span data-i18n="weakEmpty">Load a CSV file to view weak questions and suggested actions.</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 data-i18n="gpaHeading">5. GPA Group Comparison</h2>
+    <div class="placeholder" id="gpa-comparison-content">
+      <span class="empty-icon">▭</span>
+      <span data-i18n="gpaEmpty">Load a CSV file to compare exam performance across GPA groups.</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 data-i18n="execHeading">6. Executive Decision Summary</h2>
+    <div class="placeholder" id="executive-summary-content">
+      <span class="empty-icon">▭</span>
+      <span data-i18n="execEmpty">Load a CSV file to generate an automatic decision-oriented summary.</span>
+    </div>
+  </section>
+
+  <footer class="page-footer">
+    <span data-i18n="footerLine">ZipGrade CLO Exam Analyzer • v1.7 • Runs fully offline.</span>
+    <span class="disclaimer" data-i18n="footerDisclaimer">For instructional analysis and academic decision support only.</span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   i18n
+   ============================================================ */
+const translations = {
+  en: {
+    htmlLang:"en", dir:"ltr",
+    langLabel:"Language:",
+    appTitle:"ZipGrade CLO Exam Analyzer",
+    appDescription:"A simple offline tool that analyzes a single ZipGrade CSV export for one exam. It produces an exam summary, CLO performance, weak-question diagnostics linked to top-scoring students and GPA tiers, GPA-group comparison, and an executive decision summary — all in your browser.",
+    uploadHeading:"1. Load Exam Data",
+    chooseFile:"Choose CSV file",
+    loadSample:"Load Sample Data",
+    printReport:"Print / Save as PDF",
+    noFileSelected:"No file selected",
+    achievementTargetLabel:"Achievement Target (%):",
+    recalcButton:"Recalculate",
+    targetHint:"All weakness, CLO, and group analyses use this target. Borderline = within 5 pts below target.",
+    examSummaryHeading:"2. Exam Summary",
+    examSummaryEmpty:"Load a CSV file to view the exam summary.",
+    cloHeading:"3. CLO Performance",
+    cloEmpty:"Load a CSV file to view per-CLO mastery.",
+    weakHeading:"4. Weak Questions",
+    weakEmpty:"Load a CSV file to view weak questions and suggested actions.",
+    gpaHeading:"5. GPA Group Comparison",
+    gpaEmpty:"Load a CSV file to compare exam performance across GPA groups.",
+    execHeading:"6. Executive Decision Summary",
+    execEmpty:"Load a CSV file to generate an automatic decision-oriented summary.",
+    footerLine:"ZipGrade CLO Exam Analyzer • v1.7 • Runs fully offline.",
+    footerDisclaimer:"For instructional analysis and academic decision support only.",
+
+    reportTitle:"Exam Analysis Report",
+    phExam:"Exam", phClass:"Class", phDate:"Generated", phTarget:"Achievement Target", phStudents:"Students",
+
+    statusReading:"Reading file…",
+    statusReadFail:"Could not read the selected file.",
+    statusEmptyFile:"The file appears to be empty or unreadable.",
+    statusNoRows:"Headers were detected but no data rows were found.",
+    statusLoadOK:"Data loaded successfully.",
+    statusParseFail:"Failed to parse CSV.",
+    statusLoadingSample:"Loading sample data…",
+    statusTargetInvalid:"Achievement target must be a number between 0 and 100.",
+    statusRecalculated:"Recalculated.",
+    sampleFileName:"sample-data.csv (built-in)",
+
+    quizLabel:"Quiz:", classLabel:"Class:",
+    statStudents:"Students", statAverage:"Average Score",
+    statHighest:"Highest Score", statLowest:"Lowest Score",
+    statAchievementRate:"Achievement Rate",
+    cannotComputeSummary:"Cannot compute exam summary. No recognizable score column was found.",
+    noStudentScores:"No student scores could be computed.",
+
+    cannotComputeCLO:"Cannot compute CLO performance. No per-question columns were detected.",
+    noCLOsDetected:"No CLOs detected. Edit QUESTION_CLO_MAP at the top of the script.",
+    thCLO:"CLO", thQuestions:"Questions", thAvgMastery:"Avg. Mastery",
+    thPerformance:"Performance", thClassification:"Classification",
+    classAchieved:"Achieved", classNearTarget:"Near Target", classNotAchieved:"Not Achieved",
+
+    cannotComputeWeak:"Cannot compute weak questions. No per-question columns were detected.",
+    noWeakDetected:"All analyzed questions met the achievement target. No weak items detected.",
+    thQuestion:"Question", thRelatedCLO:"Related CLO",
+    thClassAvg:"Class Avg.", thTopAvg:"Top Students Avg.", thGap:"Gap",
+    thGPABreakdown:"GPA Breakdown (H / M / L)",
+    thHighGPA:"High GPA", thMedGPA:"Medium GPA", thLowGPA:"Low GPA",
+    thSeverity:"Severity", thSuggestedAction:"Suggested Action",
+    unmapped:"Unmapped",
+    sevCritical:"Critical", sevWeak:"Weak", sevBorderline:"Borderline",
+    actionItemIssue:"Review the question itself — wording, key, or CLO alignment (top-scoring students also missed it).",
+    actionRemediateLow:"Provide targeted remediation for low-GPA students on this CLO.",
+    actionRemediateMidLow:"Provide reinforcement for mid- and low-GPA students on this CLO.",
+    actionReinforceCLO:"Reinforce this CLO in the teaching plan (most tiers underperformed).",
+    actionReviewWording:"Review question wording or alignment with the CLO.",
+    actionMonitor:"Borderline — monitor and reinforce briefly before the next assessment.",
+    weakLegend:"Legend: Critical = class average AND top-scoring students both below target (item likely flawed). Weak = class below target but top students met it (teaching/preparation gap). Borderline = within 5 pts below target.",
+    weakNoGPANote:"GPA data not available — \"Top Students\" uses the top quartile of exam scores instead of GPA tiers.",
+    gpaShortHigh:"H", gpaShortMed:"M", gpaShortLow:"L",
+    topStudentsBasisGPA:"\"Top Students\" = students in the High-GPA tier (≥ 4.0).",
+    topStudentsBasisQuartile:"\"Top Students\" = top quartile of exam scores (no GPA available).",
+    weakMainTitle:"Item-level overview",
+    weakGPATitle:"GPA evidence and recommended action",
+
+    gpaNotAvailable:"GPA data not available. The CSV does not contain a recognizable GPA column.",
+    cannotComputeGPA:"Cannot compute GPA comparison. No recognizable score column was found.",
+    noUsableGPA:"No students with a usable GPA value were found.",
+    thGPAGroup:"GPA Group", thRange:"Range", thAchievementRate:"Achievement Rate",
+    overallWithGPA:"Overall (with GPA)",
+    gpaHigh:"High GPA", gpaMedium:"Medium GPA", gpaLow:"Low GPA",
+
+    notEnoughData:"Not enough data to generate an executive summary.",
+    decisionProceed:"Proceed", decisionSupport:"Support Students",
+    decisionReviewQ:"Review Questions", decisionReviewTeaching:"Review Teaching Plan",
+    decisionTextReviewTeaching:"One or more CLOs did not meet the achievement target. Review the teaching plan and provide targeted reinforcement.",
+    decisionTextSupport:"Outcomes are acceptable overall, but lower-GPA students are under-performing and need targeted academic support.",
+    decisionTextReviewQ:"Learning outcomes are being met overall, but several items appear flawed (top-scoring students also missed them).",
+    decisionTextProceedMost:"Most CLOs meet the achievement target. Continue the current teaching plan and monitor.",
+    decisionTextProceedNeutral:"No critical issues were flagged. Continue monitoring.",
+    keyFindings:"Key findings", recommendedActions:"Recommended actions", gpaSummaryTitle:"GPA performance summary",
+
+    findOverall:"Overall performance",
+    findCLO:"CLO coverage",
+    findItemQuality:"Item quality",
+    findCriticalDetail:"Critical items (top students also missed)",
+    findWeakDetail:"Weak items (top students met target, others below)",
+    findBorderlineDetail:"Borderline items (within 5 pts of target)",
+    findTopStudents:"Top-scoring students",
+    findLowGPA:"Low-GPA group",
+
+    actContinue:"Continue the current teaching plan and monitor future assessments.",
+    actReviewTeachingFor:"Reinforce the teaching plan for Not-Achieved CLOs:",
+    actBoostNearTarget:"Provide a short boost for CLOs Near Target to bring them to the target:",
+    actReviewCriticalItems:"Review wording, key, or CLO alignment for Critical items (top students missed):",
+    actRemediateWeakItems:"Provide tier-specific remediation for Weak items (top students passed, others below):",
+    actMonitorBorderline:"Monitor and briefly reinforce Borderline items before the next assessment:",
+    actSupportLowGPA:"Provide academic support for low-GPA students.",
+    actInvestigateRate:"Investigate overall assessment difficulty and instructional coverage.",
+    actNoneCritical:"No critical issues detected. Continue the current plan and document this exam as a baseline.",
+
+    gsAvg:"Average", gsRate:"Achievement", gsGap:"Gap vs class",
+    students:"students"
+  },
+  ar: {
+    htmlLang:"ar", dir:"rtl",
+    langLabel:"اللغة:",
+    appTitle:"محلل اختبارات مخرجات التعلم — ZipGrade",
+    appDescription:"أداة بسيطة تعمل دون اتصال لتحليل ملف CSV واحد مُصدَّر من ZipGrade لاختبار واحد. تُنتج ملخصاً للاختبار وأداءً لمخرجات التعلم وتحليلاً للأسئلة الضعيفة مرتبطاً بالطلاب الأعلى أداءً ومستويات المعدل التراكمي، ومقارنة بين فئات المعدل، وملخصاً تنفيذياً للقرار.",
+    uploadHeading:"١. تحميل بيانات الاختبار",
+    chooseFile:"اختر ملف CSV",
+    loadSample:"تحميل بيانات تجريبية",
+    printReport:"طباعة / حفظ كـ PDF",
+    noFileSelected:"لم يتم اختيار ملف",
+    achievementTargetLabel:"نسبة تحقيق الهدف (٪):",
+    recalcButton:"إعادة الحساب",
+    targetHint:"تُستخدم هذه النسبة في كل تحليلات الضعف ومخرجات التعلم والفئات. الحدّ الفاصل = ضمن ٥ نقاط دون الهدف.",
+    examSummaryHeading:"٢. ملخص الاختبار",
+    examSummaryEmpty:"حمّل ملف CSV لعرض ملخص الاختبار.",
+    cloHeading:"٣. أداء مخرجات التعلم",
+    cloEmpty:"حمّل ملف CSV لعرض إتقان كل مخرج تعلم.",
+    weakHeading:"٤. الأسئلة الضعيفة",
+    weakEmpty:"حمّل ملف CSV لعرض الأسئلة الضعيفة والإجراءات المقترحة.",
+    gpaHeading:"٥. مقارنة فئات المعدل التراكمي",
+    gpaEmpty:"حمّل ملف CSV لمقارنة الأداء بين فئات المعدل.",
+    execHeading:"٦. الملخص التنفيذي للقرار",
+    execEmpty:"حمّل ملف CSV لتوليد ملخص قراري تلقائي.",
+    footerLine:"محلل اختبارات مخرجات التعلم ZipGrade • الإصدار ١٫٧ • يعمل دون اتصال.",
+    footerDisclaimer:"للاستخدام في التحليل التعليمي ودعم القرار الأكاديمي فقط.",
+
+    reportTitle:"تقرير تحليل الاختبار",
+    phExam:"الاختبار", phClass:"الشعبة", phDate:"تاريخ الإصدار", phTarget:"نسبة تحقيق الهدف", phStudents:"عدد الطلاب",
+
+    statusReading:"جارٍ قراءة الملف…",
+    statusReadFail:"تعذّر قراءة الملف المحدد.",
+    statusEmptyFile:"يبدو أن الملف فارغ أو غير قابل للقراءة.",
+    statusNoRows:"تم اكتشاف رؤوس الأعمدة لكن لا توجد صفوف بيانات.",
+    statusLoadOK:"تم تحميل البيانات بنجاح.",
+    statusParseFail:"فشل تحليل ملف CSV.",
+    statusLoadingSample:"جارٍ تحميل البيانات التجريبية…",
+    statusTargetInvalid:"يجب أن تكون نسبة تحقيق الهدف رقماً بين 0 و 100.",
+    statusRecalculated:"تمت إعادة الحساب.",
+    sampleFileName:"بيانات-تجريبية.csv (مدمج)",
+
+    quizLabel:"الاختبار:", classLabel:"الشعبة:",
+    statStudents:"عدد الطلاب", statAverage:"المتوسط",
+    statHighest:"أعلى درجة", statLowest:"أدنى درجة",
+    statAchievementRate:"نسبة تحقيق الهدف",
+    cannotComputeSummary:"تعذّر حساب ملخص الاختبار. لم يتم العثور على عمود درجات معروف.",
+    noStudentScores:"لا يمكن حساب درجات الطلاب.",
+
+    cannotComputeCLO:"تعذّر حساب أداء مخرجات التعلم. لم يتم اكتشاف أعمدة لكل سؤال.",
+    noCLOsDetected:"لم يتم اكتشاف أي مخرج تعلم. عدّل QUESTION_CLO_MAP في أعلى السكربت.",
+    thCLO:"مخرج التعلم", thQuestions:"الأسئلة", thAvgMastery:"متوسط الإتقان",
+    thPerformance:"الأداء", thClassification:"التصنيف",
+    classAchieved:"محقَّق", classNearTarget:"قريب من الهدف", classNotAchieved:"غير محقَّق",
+
+    cannotComputeWeak:"تعذّر حساب الأسئلة الضعيفة. لم يتم اكتشاف أعمدة لكل سؤال.",
+    noWeakDetected:"كل الأسئلة المُحلَّلة حققت الهدف. لا توجد عناصر ضعيفة.",
+    thQuestion:"السؤال", thRelatedCLO:"المخرج المرتبط",
+    thClassAvg:"متوسط الصف", thTopAvg:"متوسط المتفوقين", thGap:"الفارق",
+    thGPABreakdown:"تفصيل المعدل (مرتفع/متوسط/منخفض)",
+    thHighGPA:"معدل مرتفع", thMedGPA:"معدل متوسط", thLowGPA:"معدل منخفض",
+    thSeverity:"الشدة", thSuggestedAction:"الإجراء المقترح",
+    unmapped:"غير مُصنَّف",
+    sevCritical:"حرج", sevWeak:"ضعيف", sevBorderline:"حدّي",
+    actionItemIssue:"راجع السؤال ذاته — الصياغة أو مفتاح الإجابة أو ارتباطه بمخرج التعلم (المتفوقون أخطأوا فيه أيضاً).",
+    actionRemediateLow:"قدّم علاجاً موجَّهاً لطلاب المعدل المنخفض على هذا المخرج.",
+    actionRemediateMidLow:"قدّم تعزيزاً لطلاب المعدل المتوسط والمنخفض على هذا المخرج.",
+    actionReinforceCLO:"عزّز هذا المخرج في خطة التدريس (معظم الفئات أدّت دون الهدف).",
+    actionReviewWording:"راجع صياغة السؤال أو ارتباطه بمخرج التعلم.",
+    actionMonitor:"حدّي — راقب وعزّز قليلاً قبل التقييم القادم.",
+    weakLegend:"الدليل: حرج = متوسط الصف ومتوسط المتفوقين كلاهما دون الهدف (السؤال غالباً معيب). ضعيف = الصف دون الهدف لكن المتفوقين حققوه (فجوة تدريس أو إعداد). حدّي = ضمن ٥ نقاط دون الهدف.",
+    weakNoGPANote:"بيانات المعدل غير متاحة — يُستخدم الربع الأعلى من درجات الاختبار بدلاً من فئات المعدل لتعريف المتفوقين.",
+    gpaShortHigh:"م", gpaShortMed:"و", gpaShortLow:"خ",
+    topStudentsBasisGPA:"\"المتفوقون\" = طلاب فئة المعدل المرتفع (≥ ٤٫٠).",
+    topStudentsBasisQuartile:"\"المتفوقون\" = الربع الأعلى من درجات الاختبار (لا يتوفر معدل).",
+    weakMainTitle:"نظرة عامة على مستوى السؤال",
+    weakGPATitle:"دلائل المعدل والإجراء المقترح",
+
+    gpaNotAvailable:"بيانات المعدل التراكمي غير متاحة.",
+    cannotComputeGPA:"تعذّر حساب مقارنة المعدل. لم يتم العثور على عمود درجات معروف.",
+    noUsableGPA:"لم يُعثر على طلاب لديهم قيمة معدل صالحة.",
+    thGPAGroup:"فئة المعدل", thRange:"المدى", thAchievementRate:"نسبة تحقيق الهدف",
+    overallWithGPA:"الإجمالي (ذوو معدل)",
+    gpaHigh:"معدل مرتفع", gpaMedium:"معدل متوسط", gpaLow:"معدل منخفض",
+
+    notEnoughData:"لا توجد بيانات كافية لتوليد الملخص التنفيذي.",
+    decisionProceed:"المتابعة", decisionSupport:"دعم الطلاب",
+    decisionReviewQ:"مراجعة الأسئلة", decisionReviewTeaching:"مراجعة خطة التدريس",
+    decisionTextReviewTeaching:"لم يتحقق هدف واحد أو أكثر من مخرجات التعلم. راجع خطة التدريس وقدّم تعزيزاً موجَّهاً.",
+    decisionTextSupport:"النتائج مقبولة عموماً لكن طلاب المعدل المنخفض دون المستوى ويحتاجون دعماً أكاديمياً موجَّهاً.",
+    decisionTextReviewQ:"مخرجات التعلم متحققة عموماً، لكن عدة أسئلة تبدو معيبة (المتفوقون أخطأوا فيها أيضاً).",
+    decisionTextProceedMost:"معظم مخرجات التعلم متحققة. استمر في خطة التدريس الحالية مع المتابعة.",
+    decisionTextProceedNeutral:"لا توجد قضايا حرجة. استمر في المتابعة.",
+    keyFindings:"أبرز النتائج", recommendedActions:"الإجراءات الموصى بها", gpaSummaryTitle:"ملخص أداء فئات المعدل",
+
+    findOverall:"الأداء العام",
+    findCLO:"تغطية مخرجات التعلم",
+    findItemQuality:"جودة الأسئلة",
+    findCriticalDetail:"أسئلة حرجة (المتفوقون أخطأوا فيها)",
+    findWeakDetail:"أسئلة ضعيفة (المتفوقون حققوا الهدف وبقية الفئات دون ذلك)",
+    findBorderlineDetail:"أسئلة حدّية (ضمن ٥ نقاط من الهدف)",
+    findTopStudents:"الطلاب المتفوقون",
+    findLowGPA:"فئة المعدل المنخفض",
+
+    actContinue:"استمر في خطة التدريس الحالية وراقب التقييمات القادمة.",
+    actReviewTeachingFor:"عزّز خطة التدريس لمخرجات التعلم غير المحقَّقة:",
+    actBoostNearTarget:"قدّم تعزيزاً قصيراً للمخرجات القريبة من الهدف لرفعها إلى الهدف:",
+    actReviewCriticalItems:"راجع الصياغة أو مفتاح الإجابة أو الارتباط بالمخرج للأسئلة الحرجة (المتفوقون أخطأوا فيها):",
+    actRemediateWeakItems:"قدّم علاجاً مخصّصاً لكل فئة للأسئلة الضعيفة (المتفوقون نجحوا وبقية الفئات دون الهدف):",
+    actMonitorBorderline:"راقب وعزّز الأسئلة الحدّية باختصار قبل التقييم القادم:",
+    actSupportLowGPA:"قدّم دعماً أكاديمياً لطلاب المعدل المنخفض.",
+    actInvestigateRate:"حقّق في صعوبة التقييم العامة والتغطية التدريسية.",
+    actNoneCritical:"لا توجد قضايا حرجة. استمر في الخطة الحالية ووثّق هذا الاختبار كمرجع.",
+
+    gsAvg:"المتوسط", gsRate:"تحقق الهدف", gsGap:"الفارق عن الصف",
+    students:"طالب"
+  }
+};
+
+let currentLang = "en";
+function t(key){
+  const dict = translations[currentLang] || translations.en;
+  if (dict[key] != null) return dict[key];
+  return translations.en[key] != null ? translations.en[key] : key;
+}
+
+/* ============================================================
+   Configuration
+   ============================================================ */
+const QUESTION_CLO_MAP = {
+  1:"CLO1", 2:"CLO1",
+  3:"CLO2", 4:"CLO2",
+  5:"CLO3", 6:"CLO3",
+  7:"CLO4", 8:"CLO4"
+};
+
+const CONFIG = {
+  CLO_NEAR_TARGET_WINDOW: 10,
+  BORDERLINE_WINDOW: 5,
+  DEFAULT_ACHIEVEMENT_TARGET: 85,
+  GPA_GROUPS: [
+    { key:"high",   labelKey:"gpaHigh",   shortKey:"high",   min:4.0, max:Infinity, tone:"good" },
+    { key:"medium", labelKey:"gpaMedium", shortKey:"medium", min:2.5, max:4.0,      tone:"warn" },
+    { key:"low",    labelKey:"gpaLow",    shortKey:"low",    min:0.0, max:2.5,      tone:"bad"  }
+  ],
+  EXEC_MOST_CLOS_GOOD_FRAC: 0.7,
+  EXEC_LOW_GPA_AVG_MAX: 60,
+  EXEC_ACHIEVEMENT_RATE_MIN: 60,
+  TOP_QUARTILE_FRACTION: 0.25
+};
+
+/* ============================================================
+   State + DOM
+   ============================================================ */
+const STATE = {
+  headers:[], rows:[],
+  achievementTarget:CONFIG.DEFAULT_ACHIEVEMENT_TARGET,
+  hasLoadedData:false,
+  model:null   // single source of truth, rebuilt by buildAnalysisModel()
+};
+
+const fileInput   = document.getElementById("csv-input");
+const sampleBtn   = document.getElementById("sample-btn");
+const printBtn    = document.getElementById("print-btn");
+const fileName    = document.getElementById("file-name");
+const statusBox   = document.getElementById("status-banner");
+const targetInput = document.getElementById("target-input");
+const recalcBtn   = document.getElementById("recalc-btn");
+const langSelect  = document.getElementById("lang-select");
+
+const examSummaryContent      = document.getElementById("exam-summary-content");
+const cloPerformanceContent   = document.getElementById("clo-performance-content");
+const weakQuestionsContent    = document.getElementById("weak-questions-content");
+const gpaComparisonContent    = document.getElementById("gpa-comparison-content");
+const executiveSummaryContent = document.getElementById("executive-summary-content");
+
+/* ============================================================
+   Helpers
+   ============================================================ */
+function escapeHTML(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function setStatus(message, type){
+  const tp = type || "info";
+  const iconMap = { info:"i", success:"✓", warning:"!", error:"✕" };
+  statusBox.className = "status show " + tp;
+  statusBox.innerHTML = '<span class="status-icon">'+iconMap[tp]+'</span><span>'+escapeHTML(message)+'</span>';
+}
+function clearStatus(){ statusBox.textContent=""; statusBox.className="status"; }
+function toNumber(v){
+  if (v == null) return NaN;
+  const s = String(v).trim();
+  if (s === "") return NaN;
+  const n = Number(s.replace(/%$/,""));
+  return isFinite(n) ? n : NaN;
+}
+function mean(arr){ if (!arr.length) return NaN; let s=0; for (const v of arr) s+=v; return s/arr.length; }
+function fmtNum(n, d){ if (!isFinite(n)) return "—"; return n.toFixed(d==null?1:d); }
+
+/* ============================================================
+   CSV parser
+   ============================================================ */
+function parseCSV(text){
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const records = [];
+  let field = "", record = [], inQuotes = false;
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if (inQuotes){
+      if (ch === '"'){
+        if (i+1 < text.length && text[i+1] === '"'){ field += '"'; i++; }
+        else { inQuotes = false; }
+      } else { field += ch; }
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ',') { record.push(field); field = ""; }
+      else if (ch === '\n' || ch === '\r'){
+        if (ch === '\r' && i+1 < text.length && text[i+1] === '\n') i++;
+        record.push(field); field = "";
+        if (!(record.length === 1 && record[0] === "")) records.push(record);
+        record = [];
+      } else { field += ch; }
+    }
+  }
+  if (field.length > 0 || record.length > 0){
+    record.push(field);
+    if (!(record.length === 1 && record[0] === "")) records.push(record);
+  }
+  if (records.length === 0) return { headers:[], rows:[] };
+  const headers = records[0].map(h => h.trim());
+  const rows = [];
+  for (let r = 1; r < records.length; r++){
+    const raw = records[r];
+    if (raw.every(v => v === "")) continue;
+    const obj = {};
+    for (let c = 0; c < headers.length; c++) obj[headers[c]] = c < raw.length ? raw[c] : "";
+    rows.push(obj);
+  }
+  return { headers, rows };
+}
+
+/* ============================================================
+   Sample CSV
+   ============================================================ */
+const SAMPLE_CSV =
+"Quiz Name,Class,Student ID,GPA out of 5,Earned Points,Possible Points,Percent Correct,Key Version,#1 Student Response,#1 Primary Answer,#1 Grade Mark,#1 Points Earned,#1 Points Possible,#1 Class Percentage,#1 Discriminant Factor,#1 Tag(s),#2 Student Response,#2 Primary Answer,#2 Grade Mark,#2 Points Earned,#2 Points Possible,#2 Class Percentage,#2 Discriminant Factor,#2 Tag(s),#3 Student Response,#3 Primary Answer,#3 Grade Mark,#3 Points Earned,#3 Points Possible,#3 Class Percentage,#3 Discriminant Factor,#3 Tag(s),#4 Student Response,#4 Primary Answer,#4 Grade Mark,#4 Points Earned,#4 Points Possible,#4 Class Percentage,#4 Discriminant Factor,#4 Tag(s)\n"
++ "2026_Sample_Exam,SAMPLE 101,S1,4.8,3,4,75,A,A,A,C,1,1,90,0.4,EMR101-1.1,B,B,C,1,1,80,0.5,EMR101-1.1,A,C,X,0,1,40,0.2,EMR101-1.2,D,D,C,1,1,70,0.5,EMR101-1.2\n"
++ "2026_Sample_Exam,SAMPLE 101,S2,4.6,3,4,75,A,A,A,C,1,1,90,0.4,EMR101-1.1,B,B,C,1,1,80,0.5,EMR101-1.1,A,C,X,0,1,40,0.2,EMR101-1.2,D,D,C,1,1,70,0.5,EMR101-1.2\n"
++ "2026_Sample_Exam,SAMPLE 101,S3,4.5,3,4,75,A,A,A,C,1,1,90,0.4,EMR101-1.1,B,B,C,1,1,80,0.5,EMR101-1.1,B,C,X,0,1,40,0.2,EMR101-1.2,D,D,C,1,1,70,0.5,EMR101-1.2\n"
++ "2026_Sample_Exam,SAMPLE 101,S4,3.6,3,4,75,A,A,A,C,1,1,90,0.4,EMR101-1.1,B,B,C,1,1,80,0.5,EMR101-1.1,C,C,C,1,1,40,0.2,EMR101-1.2,D,D,C,1,1,70,0.5,EMR101-1.2\n"
++ "2026_Sample_Exam,SAMPLE 101,S5,3.2,2,4,50,A,A,A,C,1,1,90,0.4,EMR101-1.1,B,B,C,1,1,80,0.5,EMR101-1.1,A,C,X,0,1,40,0.2,EMR101-1.2,A,D,X,0,1,70,0.5,EMR101-1.2\n"
++ "2026_Sample_Exam,SAMPLE 101,S6,2.8,2,4,50,A,A,A,C,1,1,90,0.4,EMR101-1.1,C,B,X,0,1,80,0.5,EMR101-1.1,C,C,C,1,1,40,0.2,EMR101-1.2,D,D,C,1,1,70,0.5,EMR101-1.2\n"
++ "2026_Sample_Exam,SAMPLE 101,S7,2.2,1,4,25,A,B,A,X,0,1,90,0.4,EMR101-1.1,C,B,X,0,1,80,0.5,EMR101-1.1,A,C,X,0,1,40,0.2,EMR101-1.2,D,D,C,1,1,70,0.5,EMR101-1.2\n"
++ "2026_Sample_Exam,SAMPLE 101,S8,1.9,1,4,25,A,B,A,X,0,1,90,0.4,EMR101-1.1,C,B,X,0,1,80,0.5,EMR101-1.1,A,C,X,0,1,40,0.2,EMR101-1.2,D,D,C,1,1,70,0.5,EMR101-1.2\n"
++ "2026_Sample_Exam,SAMPLE 101,S9,,2,4,50,A,A,A,C,1,1,90,0.4,EMR101-1.1,B,B,C,1,1,80,0.5,EMR101-1.1,A,C,X,0,1,40,0.2,EMR101-1.2,A,D,X,0,1,70,0.5,EMR101-1.2";
+
+/* ============================================================
+   Column detection
+   ============================================================ */
+function findHeader(headers, predicates){
+  for (let i = 0; i < predicates.length; i++){
+    const re = predicates[i];
+    for (let j = 0; j < headers.length; j++){
+      if (re.test(headers[j])) return headers[j];
+    }
+  }
+  return null;
+}
+function detectColumns(headers){
+  const studentCol  = findHeader(headers, [/^student\s*id$/i, /^student$/i, /^name$/i, /\bstudent\s*name\b/i, /\bid\b/i]);
+  const gpaCol      = findHeader(headers, [/^gpa\s*out\s*of\s*5$/i, /\bgpa\b/i]);
+  const percentCol  = findHeader(headers, [/^percent\s*correct$/i, /\bpercent(age)?\b/i, /%/]);
+  const rawScoreCol = findHeader(headers, [/^earned\s*points$/i, /^score$/i, /^total$/i, /^grade$/i, /\bearned\b/i]);
+  const maxScoreCol = findHeader(headers, [/^possible\s*points$/i, /\bmax\b/i, /\bout\s*of\b/i, /\bpossible\b/i]);
+
+  const zipQs = [];
+  const genericQs = [];
+  for (let i = 0; i < headers.length; i++){
+    const h = headers[i];
+    const mZip = h.match(/^#\s*(\d+)\s+Points\s+Earned$/i);
+    if (mZip){ zipQs.push({ header:h, number:parseInt(mZip[1],10), style:"zip" }); continue; }
+    const mGen = h.match(/^Q\s*(\d+)$/i);
+    if (mGen){ genericQs.push({ header:h, number:parseInt(mGen[1],10), style:"generic" }); }
+  }
+  const questionCols = (zipQs.length ? zipQs : genericQs).sort(function(a,b){ return a.number - b.number; });
+  questionCols.forEach(function(q){
+    if (q.style === "zip"){
+      q.possibleHeader = headers.find(function(h){ return new RegExp("^#\\s*"+q.number+"\\s+Points\\s+Possible$","i").test(h); }) || null;
+      q.tagHeader = headers.find(function(h){ return new RegExp("^#\\s*"+q.number+"\\s+Tag\\(s\\)$","i").test(h); }) || null;
+    } else {
+      q.possibleHeader = null;
+      q.tagHeader = null;
+    }
+  });
+  return { studentCol, gpaCol, percentCol, rawScoreCol, maxScoreCol, questionCols };
+}
+
+/* ============================================================
+   Analytics primitives
+   ============================================================ */
+function computeQuestionPercentFromRows(q, rows){
+  let earnedSum=0, possibleSum=0, attempts=0;
+  for (let i = 0; i < rows.length; i++){
+    const row = rows[i];
+    const e = toNumber(row[q.header]);
+    if (!isFinite(e)) continue;
+    let mx = q.possibleHeader ? toNumber(row[q.possibleHeader]) : NaN;
+    if (!isFinite(mx) || mx <= 0) mx = 1;
+    earnedSum += e; possibleSum += mx; attempts++;
+  }
+  if (!attempts || possibleSum <= 0) return NaN;
+  return (earnedSum / possibleSum) * 100;
+}
+function resolveCLOForQuestion(q, rows){
+  if (q.tagHeader){
+    for (let i = 0; i < rows.length; i++){
+      const tag = rows[i][q.tagHeader];
+      if (tag){
+        const m = String(tag).match(/CLO\s*\d+/i);
+        if (m) return m[0].replace(/\s+/g,"").toUpperCase();
+      }
+    }
+  }
+  if (QUESTION_CLO_MAP[q.number]) return QUESTION_CLO_MAP[q.number];
+  return null;
+}
+function classifyCLO(pct, target){
+  if (!isFinite(pct)) return { label:"—", tone:"", key:"" };
+  const nearMin = target - CONFIG.CLO_NEAR_TARGET_WINDOW;
+  if (pct >= target)  return { label:t("classAchieved"),    tone:"good", key:"achieved" };
+  if (pct >= nearMin) return { label:t("classNearTarget"),  tone:"warn", key:"near" };
+  return { label:t("classNotAchieved"), tone:"bad", key:"notAchieved" };
+}
+function bandForGPA(gpa){
+  for (let i = 0; i < CONFIG.GPA_GROUPS.length; i++){
+    const band = CONFIG.GPA_GROUPS[i];
+    if (gpa >= band.min && gpa < band.max) return band;
+  }
+  return null;
+}
+function computeStudentPercentages(rows, cols){
+  const result = []; let usedMethod = null;
+  rows.forEach(function(row, idx){
+    const id = cols.studentCol ? row[cols.studentCol] : ("Row " + (idx+1));
+    let pct = NaN;
+    if (cols.percentCol){
+      pct = toNumber(row[cols.percentCol]);
+      if (isFinite(pct)) usedMethod = usedMethod || "percent-column";
+    }
+    if (!isFinite(pct) && cols.rawScoreCol && cols.maxScoreCol){
+      const raw = toNumber(row[cols.rawScoreCol]);
+      const max = toNumber(row[cols.maxScoreCol]);
+      if (isFinite(raw) && isFinite(max) && max > 0){ pct = (raw/max)*100; usedMethod = usedMethod || "raw-over-max"; }
+    }
+    if (!isFinite(pct) && cols.questionCols.length){
+      let earned = 0, possible = 0, any = false;
+      cols.questionCols.forEach(function(q){
+        const e = toNumber(row[q.header]);
+        if (isFinite(e)){ earned += e; any = true; }
+        let mx = q.possibleHeader ? toNumber(row[q.possibleHeader]) : NaN;
+        if (!isFinite(mx)) mx = 1;
+        possible += mx;
+      });
+      if (any && possible > 0){ pct = (earned/possible)*100; usedMethod = usedMethod || "question-sum"; }
+    }
+    const gpa = cols.gpaCol ? toNumber(row[cols.gpaCol]) : NaN;
+    if (isFinite(pct)) result.push({ id: id || ("Row "+(idx+1)), percent:pct, gpa: isFinite(gpa) ? gpa : null, row:row });
+  });
+  return { studentPercents:result, usedMethod };
+}
+
+/* ============================================================
+   SINGLE SOURCE OF TRUTH — analysis model
+   Every renderer (dashboard + executive + print) uses this.
+   ============================================================ */
+function buildAnalysisModel(){
+  const rows = STATE.rows;
+  const target = STATE.achievementTarget;
+  const cols = detectColumns(STATE.headers);
+  const sp = computeStudentPercentages(rows, cols);
+  const allStudents = sp.studentPercents;
+
+  // Overall (uses ALL students with a usable score — regardless of GPA)
+  const percents = allStudents.map(s => s.percent);
+  let overall = null;
+  if (percents.length){
+    const avg = mean(percents);
+    const achieved = percents.filter(p => p >= target).length;
+    overall = {
+      n: percents.length,
+      avg,
+      hi: Math.max.apply(null, percents),
+      lo: Math.min.apply(null, percents),
+      achieved,
+      rate: (achieved/percents.length)*100
+    };
+  }
+
+  // GPA partition (single source of truth)
+  let gpa = null;
+  if (cols.gpaCol){
+    const withGPA = allStudents.filter(s => isFinite(s.gpa));
+    const missingGPA = allStudents.filter(s => !isFinite(s.gpa));
+    const buckets = {};
+    CONFIG.GPA_GROUPS.forEach(g => { buckets[g.key] = []; });
+    withGPA.forEach(s => { const b = bandForGPA(s.gpa); if (b) buckets[b.key].push(s); });
+
+    const groups = CONFIG.GPA_GROUPS.map(g => {
+      const members = buckets[g.key];
+      const pcts = members.map(m => m.percent);
+      const avg = pcts.length ? mean(pcts) : NaN;
+      const achieved = pcts.filter(p => p >= target).length;
+      const rate = pcts.length ? (achieved/pcts.length)*100 : NaN;
+      return {
+        key:g.key, labelKey:g.labelKey, shortKey:g.shortKey, tone:g.tone,
+        min:g.min, max:g.max,
+        members, rows:members.map(m=>m.row),
+        n:members.length, avg, achieved, rate
+      };
+    });
+
+    const totalPcts = withGPA.map(s => s.percent);
+    const totalAvg = totalPcts.length ? mean(totalPcts) : NaN;
+    const totalAchieved = totalPcts.filter(p => p >= target).length;
+    const totalRate = totalPcts.length ? (totalAchieved/totalPcts.length)*100 : NaN;
+
+    // Gap vs overall (with-GPA reference, matches GPA table)
+    groups.forEach(g => { g.gap = isFinite(g.avg) ? (g.avg - totalAvg) : NaN; });
+
+    gpa = {
+      hasGPA:true,
+      groups,
+      groupByKey: groups.reduce((acc,g)=>{ acc[g.key]=g; return acc; }, {}),
+      missingCount: missingGPA.length,
+      withGPACount: withGPA.length,
+      total:{ n:withGPA.length, avg:totalAvg, achieved:totalAchieved, rate:totalRate }
+    };
+  } else {
+    gpa = { hasGPA:false };
+  }
+
+  // Top students (basis: high GPA tier if available, else top quartile of exam scores)
+  let topInfo = { rows:[], basis:"quartile", n:0, avg:NaN };
+  if (gpa.hasGPA && gpa.groupByKey.high && gpa.groupByKey.high.n > 0){
+    const hi = gpa.groupByKey.high;
+    topInfo = { rows:hi.rows, basis:"gpa", n:hi.n, avg:hi.avg };
+  } else if (allStudents.length){
+    const sorted = allStudents.slice().sort((a,b) => b.percent - a.percent);
+    const count = Math.max(1, Math.ceil(sorted.length * CONFIG.TOP_QUARTILE_FRACTION));
+    const top = sorted.slice(0, count);
+    topInfo = {
+      rows: top.map(s=>s.row),
+      basis:"quartile",
+      n: top.length,
+      avg: mean(top.map(s=>s.percent))
+    };
+  }
+
+  // Questions + CLOs
+  const questions = cols.questionCols.map(q => ({
+    number:q.number,
+    percent:computeQuestionPercentFromRows(q, rows),
+    clo:resolveCLOForQuestion(q, rows),
+    raw:q
+  }));
+
+  const cloBuckets = {};
+  questions.forEach(q => {
+    const k = q.clo || "Unmapped";
+    if (!cloBuckets[k]) cloBuckets[k] = [];
+    cloBuckets[k].push(q);
+  });
+  const cloStats = {};
+  Object.keys(cloBuckets).forEach(k => {
+    const qs = cloBuckets[k];
+    const valid = qs.map(q => q.percent).filter(isFinite);
+    const avg = valid.length ? mean(valid) : NaN;
+    cloStats[k] = { clo:k, questions:qs, avg, classification:classifyCLO(avg, target) };
+  });
+
+  // Per-question augmentation: top avg + tier breakdown + severity + action
+  const qFlagsByKey = { critical:[], weak:[], borderline:[] };
+  const augmentedQuestions = questions.filter(q => isFinite(q.percent)).map(q => {
+    let tierPct = null;
+    if (gpa.hasGPA){
+      tierPct = { high:NaN, medium:NaN, low:NaN };
+      gpa.groups.forEach(g => {
+        tierPct[g.shortKey] = g.rows.length ? computeQuestionPercentFromRows(q.raw, g.rows) : NaN;
+      });
+    }
+    const topPct = topInfo.rows.length ? computeQuestionPercentFromRows(q.raw, topInfo.rows) : NaN;
+    const cloInfo = q.clo ? cloStats[q.clo] : null;
+    const cloClass = cloInfo ? cloInfo.classification : null;
+    const sev = classifyQuestionWeakness(q.percent, topPct, target);
+    const action = sev ? decideAction(sev, topPct, tierPct, cloClass, target) : null;
+    const item = { number:q.number, clo:q.clo, percent:q.percent, topPct, tierPct, cloClass, sev, action, raw:q.raw };
+    if (sev){
+      if (sev.key === "critical") qFlagsByKey.critical.push(item);
+      else if (sev.key === "weak") qFlagsByKey.weak.push(item);
+      else qFlagsByKey.borderline.push(item);
+    }
+    return item;
+  });
+  ["critical","weak","borderline"].forEach(k => qFlagsByKey[k].sort((a,b)=>a.percent-b.percent));
+
+  return {
+    cols, target, allStudents, overall, gpa, topInfo,
+    questions:augmentedQuestions, cloStats,
+    qFlagsByKey,
+    totalAnalyzedQuestions: augmentedQuestions.length
+  };
+}
+
+/* ============================================================
+   Weakness severity + action (shared)
+   ============================================================ */
+function classifyQuestionWeakness(classPct, topPct, target){
+  if (!isFinite(classPct)) return null;
+  const borderMin = target - CONFIG.BORDERLINE_WINDOW;
+
+  if (classPct >= target){
+    if (isFinite(topPct) && topPct < target){
+      return { key:"weak", labelKey:"sevWeak", tone:"bad", reason:"topMissed" };
+    }
+    return null;
+  }
+  if (classPct >= borderMin){
+    if (isFinite(topPct) && topPct < target){
+      return { key:"weak", labelKey:"sevWeak", tone:"bad", reason:"topMissed" };
+    }
+    return { key:"borderline", labelKey:"sevBorderline", tone:"warn", reason:"nearTarget" };
+  }
+  if (isFinite(topPct) && topPct < target){
+    return { key:"critical", labelKey:"sevCritical", tone:"crit", reason:"topMissed" };
+  }
+  return { key:"weak", labelKey:"sevWeak", tone:"bad", reason:"classBelow" };
+}
+function decideAction(sev, topPct, tierPct, cloClass, target){
+  if (!sev) return t("actionMonitor");
+  if (sev.key === "borderline") return t("actionMonitor");
+  if (isFinite(topPct) && topPct < target) return t("actionItemIssue");
+  if (tierPct){
+    const lowFail = isFinite(tierPct.low) && tierPct.low < target;
+    const midFail = isFinite(tierPct.medium) && tierPct.medium < target;
+    if (lowFail && !midFail) return t("actionRemediateLow");
+    if (lowFail && midFail)  return t("actionRemediateMidLow");
+  }
+  if (cloClass && cloClass.key === "notAchieved") return t("actionReinforceCLO");
+  return t("actionReviewWording");
+}
+
+/* ============================================================
+   Renderers (all read from STATE.model)
+   ============================================================ */
+function renderPrintHeader(){
+  const wrap = document.getElementById("print-header");
+  const titleEl = document.getElementById("ph-title");
+  const toolEl = document.getElementById("ph-tool");
+  const metaEl = document.getElementById("ph-meta");
+
+  titleEl.textContent = t("appTitle") + " — " + t("reportTitle");
+  toolEl.textContent = t("appTitle");
+
+  const m = STATE.model;
+  const rows = STATE.rows;
+  if (!m || !rows.length){
+    metaEl.innerHTML = "";
+    return;
+  }
+  const quizName = rows[0]["Quiz Name"] || "—";
+  const className = rows[0]["Class"] || "—";
+  const today = new Date();
+  const dateStr = today.toLocaleDateString(currentLang === "ar" ? "ar-EG" : "en-GB", { year:"numeric", month:"short", day:"2-digit" });
+  const studentCount = m.overall ? m.overall.n : "—";
+
+  metaEl.innerHTML =
+      '<span><strong>'+escapeHTML(t("phExam"))+':</strong> '+escapeHTML(quizName)+'</span>'
+    + '<span><strong>'+escapeHTML(t("phClass"))+':</strong> '+escapeHTML(className)+'</span>'
+    + '<span><strong>'+escapeHTML(t("phDate"))+':</strong> '+escapeHTML(dateStr)+'</span>'
+    + '<span><strong>'+escapeHTML(t("phTarget"))+':</strong> '+STATE.achievementTarget+'%</span>'
+    + '<span><strong>'+escapeHTML(t("phStudents"))+':</strong> '+studentCount+'</span>';
+}
+
+function renderExamSummary(){
+  const host = examSummaryContent;
+  const m = STATE.model;
+  if (!STATE.rows.length){
+    host.className = "placeholder";
+    host.innerHTML = '<span class="empty-icon">▭</span>'+escapeHTML(t("examSummaryEmpty"));
+    return;
+  }
+  if (!m.overall){
+    host.className = "";
+    host.innerHTML = '<div class="inline-warning"><div>'+escapeHTML(t("cannotComputeSummary"))+'</div></div>';
+    return;
+  }
+  const o = m.overall;
+  const target = m.target;
+  const quizName = STATE.rows[0]["Quiz Name"] || "—";
+  const className = STATE.rows[0]["Class"] || "—";
+
+  let html = "";
+  html += '<p class="meta-line"><strong>'+escapeHTML(t("quizLabel"))+'</strong> '+escapeHTML(quizName)+' &nbsp; <strong>'+escapeHTML(t("classLabel"))+'</strong> '+escapeHTML(className)+'</p>';
+  html += '<div class="stat-grid">';
+  html += '<div class="stat accent"><span class="stat-label">'+escapeHTML(t("statStudents"))+'</span><span class="stat-value">'+o.n+'</span></div>';
+  html += '<div class="stat"><span class="stat-label">'+escapeHTML(t("statAverage"))+'</span><span class="stat-value">'+fmtNum(o.avg,1)+'%</span></div>';
+  html += '<div class="stat good"><span class="stat-label">'+escapeHTML(t("statHighest"))+'</span><span class="stat-value">'+fmtNum(o.hi,1)+'%</span></div>';
+  html += '<div class="stat bad"><span class="stat-label">'+escapeHTML(t("statLowest"))+'</span><span class="stat-value">'+fmtNum(o.lo,1)+'%</span></div>';
+  const tone = o.rate < 60 ? "bad" : (o.rate < 80 ? "warn" : "good");
+  const subText = (currentLang === "ar")
+    ? (o.achieved + " من " + o.n + " حصلوا على ≥ " + target + "٪")
+    : (o.achieved + " of " + o.n + " scored ≥ " + target + "%");
+  html += '<div class="stat '+tone+'"><span class="stat-label">'+escapeHTML(t("statAchievementRate"))+'</span><span class="stat-value">'+fmtNum(o.rate,1)+'%</span><span class="stat-sub">'+escapeHTML(subText)+'</span></div>';
+  html += '</div>';
+  host.className = "";
+  host.innerHTML = html;
+}
+
+function renderCLOPerformance(){
+  const host = cloPerformanceContent;
+  const m = STATE.model;
+  if (!STATE.rows.length){
+    host.className = "placeholder";
+    host.innerHTML = '<span class="empty-icon">▭</span>'+escapeHTML(t("cloEmpty"));
+    return;
+  }
+  if (!m.cols.questionCols.length){
+    host.className = "";
+    host.innerHTML = '<div class="inline-warning"><div>'+escapeHTML(t("cannotComputeCLO"))+'</div></div>';
+    return;
+  }
+  const cloRows = Object.keys(m.cloStats).filter(k => k !== "Unmapped").map(k => m.cloStats[k]).sort((a,b) => {
+    const na = parseInt((a.clo.match(/\d+/) || ["0"])[0], 10);
+    const nb = parseInt((b.clo.match(/\d+/) || ["0"])[0], 10);
+    return na - nb;
+  });
+  let html = "";
+  if (!cloRows.length){
+    html += '<div class="inline-warning"><div>'+escapeHTML(t("noCLOsDetected"))+'</div></div>';
+  } else {
+    html += '<div class="table-wrap"><table><thead><tr>'
+         + '<th>'+escapeHTML(t("thCLO"))+'</th>'
+         + '<th class="num">'+escapeHTML(t("thQuestions"))+'</th>'
+         + '<th class="num">'+escapeHTML(t("thAvgMastery"))+'</th>'
+         + '<th style="width:30%;">'+escapeHTML(t("thPerformance"))+'</th>'
+         + '<th>'+escapeHTML(t("thClassification"))+'</th>'
+         + '</tr></thead><tbody>';
+    cloRows.forEach(r => {
+      const qNums = r.questions.map(q => "Q"+q.number).join(", ");
+      const pctText = isFinite(r.avg) ? fmtNum(r.avg,1)+"%" : "—";
+      const tone = r.classification.tone || "warn";
+      const barW = isFinite(r.avg) ? Math.max(0, Math.min(100, r.avg)) : 0;
+      html += '<tr>';
+      html += '<td><strong>'+escapeHTML(r.clo)+'</strong><div style="font-size:.8rem;color:var(--text-faint);">'+escapeHTML(qNums)+'</div></td>';
+      html += '<td class="num">'+r.questions.length+'</td>';
+      html += '<td class="num">'+pctText+'</td>';
+      html += '<td><div class="bar '+tone+'"><span style="width:'+barW+'%;"></span></div></td>';
+      html += '<td><span class="badge '+tone+'">'+escapeHTML(r.classification.label)+'</span></td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+  host.className = "";
+  host.innerHTML = html;
+}
+
+function renderWeakQuestions(){
+  const host = weakQuestionsContent;
+  const m = STATE.model;
+  if (!STATE.rows.length){
+    host.className = "placeholder";
+    host.innerHTML = '<span class="empty-icon">▭</span>'+escapeHTML(t("weakEmpty"));
+    return;
+  }
+  if (!m.cols.questionCols.length){
+    host.className = "";
+    host.innerHTML = '<div class="inline-warning"><div>'+escapeHTML(t("cannotComputeWeak"))+'</div></div>';
+    return;
+  }
+  const target = m.target;
+  const hasGPA = m.gpa.hasGPA;
+  const flagged = [].concat(m.qFlagsByKey.critical, m.qFlagsByKey.weak, m.qFlagsByKey.borderline);
+
+  let html = "";
+  const total = m.totalAnalyzedQuestions;
+  const introText = (currentLang === "ar")
+    ? (flagged.length + " سؤال مُعلَّم من أصل " + total + " (الهدف " + target + "٪). يُعدّ السؤال ضعيفاً إذا كان متوسط الصف دونه — أو إذا أخفق فيه المتفوقون أيضاً.")
+    : (flagged.length + " question(s) flagged out of " + total + " analyzed (target " + target + "%). A question is weak when the class average is below target — or when even top-scoring students fail to meet it.");
+  html += '<p class="meta-line">'+escapeHTML(introText)+'</p>';
+
+  if (flagged.length === 0){
+    html += '<div class="inline-success"><div>'+escapeHTML(t("noWeakDetected"))+'</div></div>';
+  } else {
+    /* ---------- SCREEN TABLE (single wide table) ---------- */
+    html += '<div class="table-wrap screen-only"><table><thead><tr>'
+         + '<th>'+escapeHTML(t("thQuestion"))+'</th>'
+         + '<th>'+escapeHTML(t("thRelatedCLO"))+'</th>'
+         + '<th class="num">'+escapeHTML(t("thClassAvg"))+'</th>'
+         + '<th class="num">'+escapeHTML(t("thTopAvg"))+'</th>';
+    if (hasGPA) html += '<th>'+escapeHTML(t("thGPABreakdown"))+'</th>';
+    html += '<th>'+escapeHTML(t("thSeverity"))+'</th>';
+    html += '<th>'+escapeHTML(t("thSuggestedAction"))+'</th>';
+    html += '</tr></thead><tbody>';
+
+    flagged.forEach(q => {
+      const cloHTML = q.clo
+        ? ('<strong>'+escapeHTML(q.clo)+'</strong>' + (q.cloClass ? (' <span class="badge '+q.cloClass.tone+'">'+escapeHTML(q.cloClass.label)+'</span>') : ''))
+        : ('<em style="color:var(--text-faint);">'+escapeHTML(t("unmapped"))+'</em>');
+      html += '<tr>';
+      html += '<td><strong>Q'+q.number+'</strong></td>';
+      html += '<td>'+cloHTML+'</td>';
+      html += '<td class="num">'+fmtNum(q.percent,1)+'%</td>';
+      const topVal = isFinite(q.topPct) ? fmtNum(q.topPct,1)+'%' : '—';
+      const topTone = isFinite(q.topPct) ? (q.topPct < target ? 'crit' : 'good') : '';
+      html += '<td class="num">'+ (topTone ? '<span class="badge '+topTone+'">'+topVal+'</span>' : topVal) +'</td>';
+      if (hasGPA){
+        const shortMap = { high:t("gpaShortHigh"), medium:t("gpaShortMed"), low:t("gpaShortLow") };
+        let chips = '<div class="gpa-mini">';
+        CONFIG.GPA_GROUPS.forEach(g => {
+          const v = q.tierPct ? q.tierPct[g.shortKey] : NaN;
+          if (!isFinite(v)){
+            chips += '<span class="chip muted"><span class="chip-key">'+escapeHTML(shortMap[g.shortKey])+'</span>—</span>';
+          } else {
+            const cls = v >= target ? 'good' : (v >= target - CONFIG.BORDERLINE_WINDOW ? 'warn' : 'bad');
+            chips += '<span class="chip '+cls+'"><span class="chip-key">'+escapeHTML(shortMap[g.shortKey])+'</span>'+fmtNum(v,0)+'%</span>';
+          }
+        });
+        chips += '</div>';
+        html += '<td>'+chips+'</td>';
+      }
+      html += '<td><span class="badge '+q.sev.tone+'">'+escapeHTML(t(q.sev.labelKey))+'</span></td>';
+      html += '<td>'+escapeHTML(q.action)+'</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+
+    /* ---------- PRINT TABLE A: Item-level overview ---------- */
+    html += '<h3 class="exec-section-title print-only" style="display:none;">'+escapeHTML(t("weakMainTitle"))+'</h3>';
+    html += '<table class="print-weak-main"><thead><tr>'
+         + '<th style="width:10%;">'+escapeHTML(t("thQuestion"))+'</th>'
+         + '<th style="width:16%;">'+escapeHTML(t("thRelatedCLO"))+'</th>'
+         + '<th class="num" style="width:14%;">'+escapeHTML(t("thClassAvg"))+'</th>'
+         + '<th class="num" style="width:12%;">'+escapeHTML(t("thGap"))+'</th>'
+         + '<th class="num" style="width:18%;">'+escapeHTML(t("thTopAvg"))+'</th>'
+         + '<th style="width:14%;">'+escapeHTML(t("thSeverity"))+'</th>'
+         + '<th style="width:16%;">'+escapeHTML(t("thClassification"))+'</th>'
+         + '</tr></thead><tbody>';
+    flagged.forEach(q => {
+      const gap = q.percent - target;
+      const gapText = (gap >= 0 ? "+" : "") + fmtNum(gap,1) + " pts";
+      const cloText = q.clo ? q.clo : t("unmapped");
+      const cloBadge = q.cloClass ? '<span class="badge '+q.cloClass.tone+'">'+escapeHTML(q.cloClass.label)+'</span>' : '—';
+      const topVal = isFinite(q.topPct) ? fmtNum(q.topPct,1)+'%' : '—';
+      html += '<tr>';
+      html += '<td><strong>Q'+q.number+'</strong></td>';
+      html += '<td>'+escapeHTML(cloText)+'</td>';
+      html += '<td class="num">'+fmtNum(q.percent,1)+'%</td>';
+      html += '<td class="num">'+escapeHTML(gapText)+'</td>';
+      html += '<td class="num">'+topVal+'</td>';
+      html += '<td><span class="badge '+q.sev.tone+'">'+escapeHTML(t(q.sev.labelKey))+'</span></td>';
+      html += '<td>'+cloBadge+'</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+
+    /* ---------- PRINT TABLE B: GPA evidence + Action ---------- */
+    html += '<h3 class="exec-section-title print-only" style="display:none;margin-top:10px;">'+escapeHTML(t("weakGPATitle"))+'</h3>';
+    html += '<table class="print-weak-gpa"><thead><tr>'
+         + '<th style="width:10%;">'+escapeHTML(t("thQuestion"))+'</th>';
+    if (hasGPA){
+      html += '<th class="num" style="width:13%;">'+escapeHTML(t("thHighGPA"))+'</th>'
+           +  '<th class="num" style="width:13%;">'+escapeHTML(t("thMedGPA"))+'</th>'
+           +  '<th class="num" style="width:13%;">'+escapeHTML(t("thLowGPA"))+'</th>';
+    }
+    html += '<th>'+escapeHTML(t("thSuggestedAction"))+'</th>';
+    html += '</tr></thead><tbody>';
+    flagged.forEach(q => {
+      html += '<tr>';
+      html += '<td><strong>Q'+q.number+'</strong></td>';
+      if (hasGPA){
+        ["high","medium","low"].forEach(k => {
+          const v = q.tierPct ? q.tierPct[k] : NaN;
+          html += '<td class="num">'+ (isFinite(v) ? fmtNum(v,0)+'%' : '—') +'</td>';
+        });
+      }
+      html += '<td>'+escapeHTML(q.action || "—")+'</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  html += '<p class="meta-line" style="margin-top:14px;"><small>'+escapeHTML(t("weakLegend"))+'</small></p>';
+  const basisText = m.topInfo.basis === "gpa" ? t("topStudentsBasisGPA") : t("topStudentsBasisQuartile");
+  html += '<p class="meta-line"><small>'+escapeHTML(basisText)+'</small></p>';
+  if (!hasGPA){
+    html += '<div class="inline-note"><div>'+escapeHTML(t("weakNoGPANote"))+'</div></div>';
+  }
+  host.className = "";
+  host.innerHTML = html;
+}
+
+function renderGPAComparison(){
+  const host = gpaComparisonContent;
+  const m = STATE.model;
+  if (!STATE.rows.length){
+    host.className = "placeholder";
+    host.innerHTML = '<span class="empty-icon">▭</span>'+escapeHTML(t("gpaEmpty"));
+    return;
+  }
+  if (!m.gpa.hasGPA){
+    host.className = "";
+    host.innerHTML = '<div class="inline-warning"><div>'+escapeHTML(t("gpaNotAvailable"))+'</div></div>';
+    return;
+  }
+  if (!m.overall){
+    host.className = "";
+    host.innerHTML = '<div class="inline-warning"><div>'+escapeHTML(t("cannotComputeGPA"))+'</div></div>';
+    return;
+  }
+  if (m.gpa.withGPACount === 0){
+    host.className = "";
+    host.innerHTML = '<div class="inline-warning"><div>'+escapeHTML(t("noUsableGPA"))+'</div></div>';
+    return;
+  }
+
+  let html = "";
+  html += '<div class="table-wrap"><table><thead><tr>'
+       + '<th>'+escapeHTML(t("thGPAGroup"))+'</th>'
+       + '<th>'+escapeHTML(t("thRange"))+'</th>'
+       + '<th class="num">'+escapeHTML(t("statStudents"))+'</th>'
+       + '<th class="num">'+escapeHTML(t("statAverage"))+'</th>'
+       + '<th style="width:22%;">'+escapeHTML(t("thPerformance"))+'</th>'
+       + '<th class="num">'+escapeHTML(t("thAchievementRate"))+'</th>'
+       + '</tr></thead><tbody>';
+  m.gpa.groups.forEach(g => {
+    const rangeText = g.max === Infinity ? g.min.toFixed(1)+" – 5.0" : g.min.toFixed(1)+" – <"+g.max.toFixed(1);
+    const barW = isFinite(g.avg) ? Math.max(0, Math.min(100, g.avg)) : 0;
+    html += '<tr>';
+    html += '<td><span class="badge '+g.tone+'">'+escapeHTML(t(g.labelKey))+'</span></td>';
+    html += '<td>'+escapeHTML(rangeText)+'</td>';
+    html += '<td class="num">'+g.n+'</td>';
+    html += '<td class="num">'+(isFinite(g.avg)?fmtNum(g.avg,1)+"%":"—")+'</td>';
+    html += '<td><div class="bar '+g.tone+'"><span style="width:'+barW+'%;"></span></div></td>';
+    html += '<td class="num">'+(isFinite(g.rate)?fmtNum(g.rate,1)+"%":"—")+(g.n?' <span style="color:var(--text-faint);font-size:.8rem;">('+g.achieved+'/'+g.n+')</span>':'')+'</td>';
+    html += '</tr>';
+  });
+  const tot = m.gpa.total;
+  const overallBarW = isFinite(tot.avg) ? Math.max(0, Math.min(100, tot.avg)) : 0;
+  html += '<tr style="background:var(--surface-alt);">'
+       + '<td><strong>'+escapeHTML(t("overallWithGPA"))+'</strong></td>'
+       + '<td>—</td>'
+       + '<td class="num"><strong>'+tot.n+'</strong></td>'
+       + '<td class="num"><strong>'+fmtNum(tot.avg,1)+'%</strong></td>'
+       + '<td><div class="bar accent"><span style="width:'+overallBarW+'%;"></span></div></td>'
+       + '<td class="num"><strong>'+fmtNum(tot.rate,1)+'%</strong> <span style="color:var(--text-faint);font-size:.8rem;">('+tot.achieved+'/'+tot.n+')</span></td>'
+       + '</tr>';
+  html += '</tbody></table></div>';
+
+  if (m.gpa.missingCount){
+    const noteText = (currentLang === "ar")
+      ? ("ملاحظة: " + m.gpa.missingCount + " طالب/طلاب بدون معدل صالح وتم استبعادهم من فئات المعدل.")
+      : ("Note: " + m.gpa.missingCount + " student(s) had a missing GPA and were excluded from GPA grouping.");
+    html += '<div class="inline-note"><div>'+escapeHTML(noteText)+'</div></div>';
+  }
+  host.className = "";
+  host.innerHTML = html;
+}
+
+function renderExecutiveSummary(){
+  const host = executiveSummaryContent;
+  const m = STATE.model;
+  if (!STATE.rows.length){
+    host.className = "placeholder";
+    host.innerHTML = '<span class="empty-icon">▭</span>'+escapeHTML(t("execEmpty"));
+    return;
+  }
+  if (!m.overall){
+    host.className = "";
+    host.innerHTML = '<div class="inline-warning"><div>'+escapeHTML(t("notEnoughData"))+'</div></div>';
+    return;
+  }
+  const target = m.target;
+  const o = m.overall;
+
+  // CLO buckets (from shared model)
+  const cloRows = Object.keys(m.cloStats).filter(k => k !== "Unmapped").map(k => m.cloStats[k]);
+  const totalCLOs = cloRows.length;
+  const achievedCLOs = cloRows.filter(c => c.classification.key === "achieved");
+  const nearCLOs = cloRows.filter(c => c.classification.key === "near");
+  const notAchievedCLOs = cloRows.filter(c => c.classification.key === "notAchieved");
+  const mostCLOsAchieved = totalCLOs > 0 && (achievedCLOs.length/totalCLOs) >= CONFIG.EXEC_MOST_CLOS_GOOD_FRAC;
+  const anyNotAchieved = notAchievedCLOs.length > 0;
+  const lowAchievementRate = o.rate < CONFIG.EXEC_ACHIEVEMENT_RATE_MIN;
+
+  // Low-GPA picture STRICTLY from the shared GPA model (matches GPA table exactly)
+  let lowGPAStruggling = false, lowGPAGroup = null;
+  if (m.gpa.hasGPA && m.gpa.groupByKey.low && m.gpa.groupByKey.low.n > 0){
+    const lo = m.gpa.groupByKey.low;
+    lowGPAGroup = { n:lo.n, avg:lo.avg };
+    lowGPAStruggling = isFinite(lo.avg) && lo.avg < CONFIG.EXEC_LOW_GPA_AVG_MAX;
+  }
+
+  // Decision banner
+  let decision;
+  if (anyNotAchieved || lowAchievementRate){
+    decision = { label:t("decisionReviewTeaching"), cls:"review-teaching", text:t("decisionTextReviewTeaching") };
+  } else if (m.qFlagsByKey.critical.length > 0){
+    decision = { label:t("decisionReviewQ"), cls:"review-q", text:t("decisionTextReviewQ") };
+  } else if (lowGPAStruggling){
+    decision = { label:t("decisionSupport"), cls:"support", text:t("decisionTextSupport") };
+  } else if (mostCLOsAchieved){
+    decision = { label:t("decisionProceed"), cls:"proceed", text:t("decisionTextProceedMost") };
+  } else {
+    decision = { label:t("decisionProceed"), cls:"proceed", text:t("decisionTextProceedNeutral") };
+  }
+
+  // Findings
+  const findings = [];
+  findings.push(
+    (currentLang === "ar"
+      ? (t("findOverall") + ": متوسط الصف " + fmtNum(o.avg,1) + "٪ على " + o.n + " طالباً، ونسبة تحقيق الهدف " + fmtNum(o.rate,1) + "٪ (الهدف " + target + "٪).")
+      : (t("findOverall") + ": class average " + fmtNum(o.avg,1) + "% across " + o.n + " students; achievement rate " + fmtNum(o.rate,1) + "% (target " + target + "%)."))
+  );
+  if (totalCLOs > 0){
+    findings.push(
+      (currentLang === "ar"
+        ? (t("findCLO") + ": " + totalCLOs + " مخرجات تعلم — " + achievedCLOs.length + " محققة، " + nearCLOs.length + " قريبة من الهدف، " + notAchievedCLOs.length + " غير محققة.")
+        : (t("findCLO") + ": " + totalCLOs + " CLOs — " + achievedCLOs.length + " Achieved, " + nearCLOs.length + " Near Target, " + notAchievedCLOs.length + " Not Achieved."))
+    );
+    if (notAchievedCLOs.length){
+      const list = notAchievedCLOs.map(c => c.clo + " (" + fmtNum(c.avg,1) + "%)").join(", ");
+      findings.push((currentLang === "ar" ? "غير محققة: " : "Not Achieved: ") + list + ".");
+    }
+    if (nearCLOs.length){
+      const list = nearCLOs.map(c => c.clo + " (" + fmtNum(c.avg,1) + "%)").join(", ");
+      findings.push((currentLang === "ar" ? "قريبة من الهدف: " : "Near Target: ") + list + ".");
+    }
+  }
+  if (m.totalAnalyzedQuestions > 0){
+    findings.push(
+      (currentLang === "ar"
+        ? (t("findItemQuality") + ": " + m.qFlagsByKey.critical.length + " حرج، " + m.qFlagsByKey.weak.length + " ضعيف، " + m.qFlagsByKey.borderline.length + " حدّي (من أصل " + m.totalAnalyzedQuestions + ").")
+        : (t("findItemQuality") + ": " + m.qFlagsByKey.critical.length + " Critical, " + m.qFlagsByKey.weak.length + " Weak, " + m.qFlagsByKey.borderline.length + " Borderline (of " + m.totalAnalyzedQuestions + " questions)."))
+    );
+    if (m.qFlagsByKey.critical.length){
+      const list = m.qFlagsByKey.critical.map(q => "Q"+q.number + " (" + fmtNum(q.percent,0) + "%" + (isFinite(q.topPct) ? ", top " + fmtNum(q.topPct,0) + "%" : "") + ")").join(", ");
+      findings.push(t("findCriticalDetail") + ": " + list + ".");
+    }
+    if (m.qFlagsByKey.weak.length){
+      const list = m.qFlagsByKey.weak.map(q => "Q"+q.number + " (" + fmtNum(q.percent,0) + "%" + (isFinite(q.topPct) ? ", top " + fmtNum(q.topPct,0) + "%" : "") + ")").join(", ");
+      findings.push(t("findWeakDetail") + ": " + list + ".");
+    }
+    if (m.qFlagsByKey.borderline.length){
+      const list = m.qFlagsByKey.borderline.map(q => "Q"+q.number + " (" + fmtNum(q.percent,0) + "%)").join(", ");
+      findings.push(t("findBorderlineDetail") + ": " + list + ".");
+    }
+  }
+  if (m.topInfo.n && isFinite(m.topInfo.avg)){
+    const basisShort = m.topInfo.basis === "gpa"
+      ? (currentLang === "ar" ? "فئة المعدل المرتفع" : "High-GPA tier")
+      : (currentLang === "ar" ? "الربع الأعلى" : "top quartile");
+    findings.push(
+      (currentLang === "ar"
+        ? (t("findTopStudents") + " (" + basisShort + "، " + m.topInfo.n + " " + t("students") + "): متوسط " + fmtNum(m.topInfo.avg,1) + "٪.")
+        : (t("findTopStudents") + " (" + basisShort + ", " + m.topInfo.n + " " + t("students") + "): average " + fmtNum(m.topInfo.avg,1) + "%."))
+    );
+  }
+  if (lowGPAGroup){
+    findings.push(
+      (currentLang === "ar"
+        ? (t("findLowGPA") + ": متوسط " + fmtNum(lowGPAGroup.avg,1) + "٪ على " + lowGPAGroup.n + " طلاب.")
+        : (t("findLowGPA") + ": average " + fmtNum(lowGPAGroup.avg,1) + "% across " + lowGPAGroup.n + " students."))
+    );
+  }
+
+  // Actions
+  const actions = [];
+  if (notAchievedCLOs.length){
+    actions.push(t("actReviewTeachingFor") + " " + notAchievedCLOs.map(c=>c.clo).join(", ") + ".");
+  }
+  if (nearCLOs.length){
+    actions.push(t("actBoostNearTarget") + " " + nearCLOs.map(c=>c.clo).join(", ") + ".");
+  }
+  if (m.qFlagsByKey.critical.length){
+    actions.push(t("actReviewCriticalItems") + " " + m.qFlagsByKey.critical.slice(0,6).map(q=>"Q"+q.number).join(", ") + ".");
+  }
+  if (m.qFlagsByKey.weak.length){
+    actions.push(t("actRemediateWeakItems") + " " + m.qFlagsByKey.weak.slice(0,6).map(q=>"Q"+q.number).join(", ") + ".");
+  }
+  if (m.qFlagsByKey.borderline.length){
+    actions.push(t("actMonitorBorderline") + " " + m.qFlagsByKey.borderline.slice(0,6).map(q=>"Q"+q.number).join(", ") + ".");
+  }
+  if (lowGPAStruggling) actions.push(t("actSupportLowGPA"));
+  if (lowAchievementRate) actions.push(t("actInvestigateRate"));
+  if (actions.length === 0){
+    actions.push(mostCLOsAchieved ? t("actContinue") : t("actNoneCritical"));
+  }
+
+  // Render
+  let html = "";
+  html += '<div class="exec-decision '+decision.cls+'"><span class="decision-label">'+escapeHTML(decision.label)+'</span><span class="decision-text">'+escapeHTML(decision.text)+'</span></div>';
+  html += '<div class="exec-section-title">'+escapeHTML(t("keyFindings"))+'</div><ul class="findings">';
+  findings.forEach(f => { html += '<li>'+escapeHTML(f)+'</li>'; });
+  html += '</ul>';
+  html += '<div class="exec-section-title">'+escapeHTML(t("recommendedActions"))+'</div><ul class="actions">';
+  actions.forEach(a => { html += '<li>'+escapeHTML(a)+'</li>'; });
+  html += '</ul>';
+
+  // GPA summary block — STRICTLY from shared model (same numbers as GPA table)
+  if (m.gpa.hasGPA && m.gpa.withGPACount > 0){
+    html += '<div class="exec-section-title">'+escapeHTML(t("gpaSummaryTitle"))+'</div>';
+    html += '<div class="gpa-summary-grid">';
+    m.gpa.groups.forEach(g => {
+      const avgText = isFinite(g.avg) ? fmtNum(g.avg,1)+"%" : "—";
+      const rateText = isFinite(g.rate) ? fmtNum(g.rate,1)+"%" : "—";
+      const gapText  = isFinite(g.gap) ? ((g.gap >= 0 ? "+" : "") + fmtNum(g.gap,1) + " pts") : "—";
+      const gapCls = isFinite(g.gap) ? (g.gap >= 0 ? "pos" : "neg") : "";
+      html += '<div class="gpa-summary-card">'
+            + '<div class="gsc-head"><span class="gsc-name">'+escapeHTML(t(g.labelKey))+'</span>'
+            + '<span class="badge '+g.tone+'">'+g.n+' '+escapeHTML(t("students"))+'</span></div>'
+            + '<div class="gsc-row"><span>'+escapeHTML(t("gsAvg"))+'</span><strong>'+avgText+'</strong></div>'
+            + '<div class="gsc-row"><span>'+escapeHTML(t("gsRate"))+'</span><strong>'+rateText+(g.n?' ('+g.achieved+'/'+g.n+')':'')+'</strong></div>'
+            + '<div class="gsc-row"><span>'+escapeHTML(t("gsGap"))+'</span><strong class="gsc-gap '+gapCls+'">'+gapText+'</strong></div>'
+            + '</div>';
+    });
+    html += '</div>';
+    const tot = m.gpa.total;
+    const overallLine = (currentLang === "ar"
+      ? ("الإجمالي (ذوو معدل): متوسط " + fmtNum(tot.avg,1) + "٪ ونسبة تحقيق الهدف " + fmtNum(tot.rate,1) + "٪ على " + tot.n + " طالباً" + (m.gpa.missingCount ? " (" + m.gpa.missingCount + " بدون معدل مُستبعدين)" : "") + ".")
+      : ("Overall (with GPA): average " + fmtNum(tot.avg,1) + "%, achievement rate " + fmtNum(tot.rate,1) + "% across " + tot.n + " students" + (m.gpa.missingCount ? " (" + m.gpa.missingCount + " excluded for missing GPA)" : "") + "."));
+    html += '<p class="meta-line" style="margin-top:10px;"><small>'+escapeHTML(overallLine)+'</small></p>';
+  }
+
+  host.className = "";
+  host.innerHTML = html;
+}
+
+/* ============================================================
+   Language + pipeline
+   ============================================================ */
+function applyStaticTranslations(){
+  document.documentElement.lang = translations[currentLang].htmlLang;
+  document.documentElement.dir  = translations[currentLang].dir;
+  document.title = t("appTitle");
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    el.textContent = t(key);
+  });
+  if (!STATE.hasLoadedData) fileName.textContent = t("noFileSelected");
+}
+function setLanguage(lang){
+  if (!translations[lang]) lang = "en";
+  currentLang = lang;
+  try { localStorage.setItem("zg_clo_lang", lang); } catch(e){}
+  if (langSelect) langSelect.value = lang;
+  applyStaticTranslations();
+  if (STATE.hasLoadedData) runAllAnalyses();
+}
+function runAllAnalyses(){
+  try {
+    STATE.model = buildAnalysisModel();
+  } catch(e){
+    console.error("buildAnalysisModel:", e);
+    STATE.model = null;
+  }
+  try { renderPrintHeader(); }      catch(e){ console.error("renderPrintHeader:", e); }
+  try { renderExamSummary(); }      catch(e){ console.error("renderExamSummary:", e); }
+  try { renderCLOPerformance(); }   catch(e){ console.error("renderCLOPerformance:", e); }
+  try { renderWeakQuestions(); }    catch(e){ console.error("renderWeakQuestions:", e); }
+  try { renderGPAComparison(); }    catch(e){ console.error("renderGPAComparison:", e); }
+  try { renderExecutiveSummary(); } catch(e){ console.error("renderExecutiveSummary:", e); }
+}
+function loadCSVText(text, sourceLabel){
+  try {
+    const parsed = parseCSV(text);
+    if (!parsed.headers.length){ setStatus(t("statusEmptyFile"), "error"); return; }
+    if (!parsed.rows.length){ setStatus(t("statusNoRows"), "warning"); return; }
+    STATE.headers = parsed.headers;
+    STATE.rows = parsed.rows;
+    STATE.hasLoadedData = true;
+    console.log("Loaded:", sourceLabel, "rows:", parsed.rows.length, "cols:", parsed.headers.length);
+    setStatus(t("statusLoadOK"), "success");
+    runAllAnalyses();
+  } catch(err){
+    console.error("CSV parse error:", err);
+    setStatus(t("statusParseFail") + " " + err.message, "error");
+  }
+}
+function applyTargetFromInput(){
+  const num = Number(targetInput.value);
+  if (!isFinite(num) || num < 0 || num > 100){
+    setStatus(t("statusTargetInvalid"), "warning");
+    targetInput.value = STATE.achievementTarget;
+    return;
+  }
+  STATE.achievementTarget = num;
+  if (STATE.rows.length){
+    runAllAnalyses();
+    setStatus(t("statusRecalculated"), "success");
+  }
+}
+
+/* ============================================================
+   Event wiring
+   ============================================================ */
+fileInput.addEventListener("change", function(e){
+  const file = e.target.files && e.target.files[0];
+  if (!file){ fileName.textContent = t("noFileSelected"); clearStatus(); return; }
+  fileName.textContent = file.name;
+  setStatus(t("statusReading"), "info");
+  const reader = new FileReader();
+  reader.onload = function(evt){ loadCSVText(String(evt.target.result), file.name); };
+  reader.onerror = function(){ setStatus(t("statusReadFail"), "error"); };
+  reader.readAsText(file);
+});
+sampleBtn.addEventListener("click", function(){
+  fileName.textContent = t("sampleFileName");
+  setStatus(t("statusLoadingSample"), "info");
+  loadCSVText(SAMPLE_CSV, "built-in sample");
+});
+printBtn.addEventListener("click", function(){
+  if (!STATE.hasLoadedData){
+    setStatus(currentLang === "ar" ? "حمّل بيانات أولاً قبل الطباعة." : "Load data before printing.", "warning");
+    return;
+  }
+  renderPrintHeader();
+  window.print();
+});
+recalcBtn.addEventListener("click", applyTargetFromInput);
+targetInput.addEventListener("change", applyTargetFromInput);
+langSelect.addEventListener("change", function(){ setLanguage(langSelect.value); });
+
+(function init(){
+  let saved = "en";
+  try { saved = localStorage.getItem("zg_clo_lang") || "en"; } catch(e){}
+  setLanguage(saved);
+  console.log("ZipGrade CLO Exam Analyzer ready.");
+})();
+</script>
+</body>
+</html>
